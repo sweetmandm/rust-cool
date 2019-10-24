@@ -1,9 +1,8 @@
 mod lexer;
 mod token;
 
-
-fn main() {
-    let sample = r#"
+fn _sample_one() -> String {
+    return r#"
         class Main inherits Foo {
             (*
             test comment
@@ -14,7 +13,27 @@ fn main() {
             baz: Bool <- false;
             main(): Object {};
         };
-    "#;
+    "#.to_string();
+}
+
+fn _sample_two() -> String {
+    return r#"
+        class Main {
+            (* This is an unterminated comment.
+    "#.to_string();
+}
+
+fn _sample_three() -> String {
+    return r#"
+        class Main {
+            foo: String <- "foo\
+            bar";
+        };
+    "#.to_string();
+}
+
+fn main() {
+    let sample = _sample_three();
     let lexer = lexer::Lexer::new(&sample);
     for token_tup in lexer {
         println!("token: {:?}", token_tup);
