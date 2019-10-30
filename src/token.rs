@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub enum Token {
-    Class,
+    Class_,
     Else,
     Fi,
     If,

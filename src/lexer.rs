@@ -5,7 +5,7 @@ const MAX_STR_CONST: usize = 1025;
 
 lexer! {
     fn next_token(text: 'a) -> Token;
-    "class" => Token::Class,
+    "class" => Token::Class_,
     "else" => Token::Else,
     "fi" => Token::Fi,
     "if" => Token::If,
@@ -31,8 +31,8 @@ lexer! {
 
     r"[ \t\r\n]" => Token::Whitespace,
     r"--[^\n\r]*" => Token::Comment,
-    r"\(\*.*\*\)" => Token::Comment,
-    r"\(\*.*" => Token::Error("EOF in comment".to_string()),
+    r"\(\*(~(.*\*\).*))\*\)" => Token::Comment,
+    r"\(\*(~(.*\*\).*))" => Token::Error("EOF in comment".to_string()),
     r"\*\)" => Token::Error("Unmatched *)".to_string()),
 
     "=>" => Token::Darrow,
