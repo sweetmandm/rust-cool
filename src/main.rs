@@ -46,6 +46,7 @@ fn _sample_0() -> String {
             le_comp: Bool <- ~100 <= 100;
             le_comp: Bool <- not true;
             eq_comp: Bool <- "test" = "test";
+            paren: Int <- (4 + 10) * 3;
             main(): Object {};
             (* another comment *)
         };

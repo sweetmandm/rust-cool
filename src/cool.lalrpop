@@ -83,6 +83,7 @@ dispatchable_expr: Expr = {
     "CASE" <e:expr> "OF" <branches:case_branch+> "ESAC" => {
         Expr::Case(Box::new(e), Box::new(branches))
     },
+    "(" <e:expr> ")" => Expr::Paren(Box::new(e)),
 };
 
 atom: Expr = {
