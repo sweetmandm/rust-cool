@@ -39,7 +39,7 @@ pub struct CaseBranch {
 pub type ArgDecl = (Identifier, Type);
 
 #[derive(Debug)]
-pub enum MathOp {
+pub enum Operator {
     Add,
     Subtract,
     Mul,
@@ -75,7 +75,7 @@ pub enum Expr {
     Isvoid(Box<Expr>),
     Math {
         lhs: Box<Expr>,
-        op: Box<MathOp>,
+        op: Box<Operator>,
         rhs: Box<Expr>,
     },
     Paren(Box<Expr>),

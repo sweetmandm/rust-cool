@@ -42,6 +42,7 @@ fn _sample_0() -> String {
             foo: String <- "foo";
             bar: Bool <- true;
             baz: Bool <- false;
+            math: Int <- 4 + 10 * 3;
             main(): Object {};
             (* another comment *)
         };

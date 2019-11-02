@@ -76,24 +76,57 @@ dispatch: Expr = {
 };
 
 dispatchable_expr: Expr = {
-    <e:dispatch> => e,
+    dispatch,
+    atom,
     "NEW" <tid:"TYPE"> => Expr::New(tid),
+    "{" <e:expr_list_semicolon+> "}" => Expr::Block(Box::new(e)),
+    "CASE" <e:expr> "OF" <branches:case_branch+> "ESAC" => {
+        Expr::Case(Box::new(e), Box::new(branches))
+    },
+};
+
+atom: Expr = {
+    <id:"ID"> => Expr::Identifier(id),
+    <b:"BOOL"> => Expr::Bool(b),
+    <i:"INT"> => Expr::Int(i.parse().unwrap()),
+    <s:"STR"> => Expr::Str(s),
 };
 
 let: Expr = {
     "LET" "IN" <e:expr> => Expr::Let(Box::new(vec![]), Box::new(e)),
 };
 
-math_op: MathOp = {
-    "+" => MathOp::Add,
-    "-" => MathOp::Subtract,
-    "*" => MathOp::Mul,
-    "/" => MathOp::Div,
+math_expr: Expr = {
+    <lhs:math_expr> <op:math_op_plus_minus> <rhs:math_term> => Expr::Math {
+        lhs: Box::new(lhs),
+        op: Box::new(op),
+        rhs: Box::new(rhs),
+    },
+    math_term,
+};
+
+math_op_plus_minus: Operator = {
+    "+" => Operator::Add,
+    "-" => Operator::Subtract,
+};
+
+math_term: Expr = {
+    <lhs:math_term> <op:math_op_mul_div> <rhs:dispatchable_expr> => Expr::Math {
+        lhs: Box::new(lhs),
+        op: Box::new(op),
+        rhs: Box::new(rhs),
+    },
+    dispatchable_expr,
+};
+
+math_op_mul_div: Operator = {
+    "*" => Operator::Mul,
+    "/" => Operator::Div,
 };
 
 expr: Expr = {
-    <e:let> => e,
-    <e:dispatchable_expr> => e,
+    let,
+    math_expr,
     // Assign
     <oid:"ID"> "ASSIGN" <e:expr> => Expr::Assignment(oid, Box::new(e)),
     // If
@@ -109,14 +142,6 @@ expr: Expr = {
             test: Box::new(test),
             exec: Box::new(exec),
         }
-    },
-    <id:"ID"> => Expr::Identifier(id),
-    <b:"BOOL"> => Expr::Bool(b),
-    <i:"INT"> => Expr::Int(i.parse().unwrap()),
-    <s:"STR"> => Expr::Str(s),
-    "{" <e:expr_list_semicolon+> "}" => Expr::Block(Box::new(e)),
-    "CASE" <e:expr> "OF" <branches:case_branch+> "ESAC" => {
-        Expr::Case(Box::new(e), Box::new(branches))
     },
     "ISVOID" <e:expr> => Expr::Isvoid(Box::new(e)),
 };
