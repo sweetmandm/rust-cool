@@ -96,6 +96,15 @@ let: Expr = {
     "LET" "IN" <e:expr> => Expr::Let(Box::new(vec![]), Box::new(e)),
 };
 
+comparison_expr: Expr = {
+    <lhs:comparison_expr> <op:comparison_op> <rhs:math_expr> => Expr::Comparison {
+        lhs: Box::new(lhs),
+        op: Box::new(op),
+        rhs: Box::new(rhs),
+    },
+    math_expr,
+};
+
 math_expr: Expr = {
     <lhs:math_expr> <op:math_op_plus_minus> <rhs:math_term> => Expr::Math {
         lhs: Box::new(lhs),
@@ -105,9 +114,15 @@ math_expr: Expr = {
     math_term,
 };
 
-math_op_plus_minus: Operator = {
-    "+" => Operator::Add,
-    "-" => Operator::Subtract,
+comparison_op: ComparisonOperator = {
+    "<" => ComparisonOperator::Lt,
+    "<=" => ComparisonOperator::Le,
+    "=" => ComparisonOperator::Equal,
+}
+
+math_op_plus_minus: MathOperator = {
+    "+" => MathOperator::Add,
+    "-" => MathOperator::Subtract,
 };
 
 math_term: Expr = {
@@ -119,14 +134,14 @@ math_term: Expr = {
     dispatchable_expr,
 };
 
-math_op_mul_div: Operator = {
-    "*" => Operator::Mul,
-    "/" => Operator::Div,
+math_op_mul_div: MathOperator = {
+    "*" => MathOperator::Mul,
+    "/" => MathOperator::Div,
 };
 
 expr: Expr = {
     let,
-    math_expr,
+    comparison_expr,
     // Assign
     <oid:"ID"> "ASSIGN" <e:expr> => Expr::Assignment(oid, Box::new(e)),
     // If
