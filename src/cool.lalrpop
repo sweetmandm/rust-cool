@@ -126,10 +126,23 @@ math_op_plus_minus: MathOperator = {
 };
 
 math_term: Expr = {
-    <lhs:math_term> <op:math_op_mul_div> <rhs:dispatchable_expr> => Expr::Math {
+    <lhs:math_term> <op:math_op_mul_div> <rhs:unary_expr> => Expr::Math {
         lhs: Box::new(lhs),
         op: Box::new(op),
         rhs: Box::new(rhs),
+    },
+    unary_expr,
+};
+
+unary_op: UnaryOperator = {
+    "~" => UnaryOperator::Neg,
+    "NOT" => UnaryOperator::Not,
+};
+
+unary_expr: Expr = {
+    <op:unary_op> <s:dispatchable_expr> => Expr::UnaryOperation {
+        op: Box::new(op),
+        s: Box::new(s),
     },
     dispatchable_expr,
 };

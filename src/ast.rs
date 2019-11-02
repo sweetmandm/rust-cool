@@ -54,6 +54,12 @@ pub enum ComparisonOperator {
 }
 
 #[derive(Debug)]
+pub enum UnaryOperator {
+    Neg,
+    Not,
+}
+
+#[derive(Debug)]
 pub enum Expr {
     Identifier(Identifier),
     Bool(Boolean),
@@ -89,6 +95,10 @@ pub enum Expr {
         lhs: Box<Expr>,
         op: Box<ComparisonOperator>,
         rhs: Box<Expr>,
+    },
+    UnaryOperation {
+        op: Box<UnaryOperator>,
+        s: Box<Expr>,
     },
     Paren(Box<Expr>),
 }

@@ -43,8 +43,9 @@ fn _sample_0() -> String {
             bar: Bool <- true;
             baz: Bool <- false;
             math_comp: Int <- 4 + 10 * 3 < 100;
-            le_comp: Int <- 100 <= 100;
-            eq_comp: Int <- "test" = "test";
+            le_comp: Bool <- ~100 <= 100;
+            le_comp: Bool <- not true;
+            eq_comp: Bool <- "test" = "test";
             main(): Object {};
             (* another comment *)
         };
