@@ -3,8 +3,14 @@ name = "rust-cool"
 version = "0.1.0"
 authors = ["David Sweetman <david.sweetman@tanium.com>"]
 edition = "2018"
+build = "build.rs" # LALRPOP preprocessing
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 plex = "0.2.5"
+lalrpop-util = "0.17.2"
+regex = "0.2.0"
+
+[build-dependencies]
+lalrpop = "0.17.2"

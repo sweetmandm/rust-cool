@@ -54,6 +54,7 @@ lexer! {
     "=" => Token::Equal,
     "<" => Token::Lt,
     r"\." => Token::Period,
+    r"," => Token::Comma,
     "." => Token::Error(format!("Unexpected character: {}", text.to_owned())),
 }
 
@@ -115,15 +116,16 @@ impl<'a> Lexer<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Loc {
-    pub start: usize,
-    pub end: usize,
+#[derive(Debug)]
+pub struct LexicalError {
+    // Not possible - there are no invalid lexes
 }
 
+pub type Loc = usize;
+
 impl<'a> Iterator for Lexer<'a> {
-    type Item = (Token, Loc);
-    fn next(&mut self) -> Option<(Token, Loc)> {
+    type Item = Result<(Loc, Token, Loc), LexicalError>;
+    fn next(&mut self) -> Option<Result<(Loc, Token, Loc), LexicalError>> {
         loop {
             if let Some((token, rem)) = next_token(self.remaining) {
                 let start = self.original.len() - self.remaining.len();
@@ -131,7 +133,7 @@ impl<'a> Iterator for Lexer<'a> {
                 self.remaining = rem;
                 match token {
                     Token::Comment | Token::Whitespace => continue,
-                    token => return Some((token, Loc { start, end })),
+                    token => return Some(Ok((start, token, end))),
                 }
             } else {
                 return None;

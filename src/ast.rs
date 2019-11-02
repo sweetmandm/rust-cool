@@ -5,13 +5,15 @@ pub struct Program {
 
 #[derive(Debug)]
 pub struct Class {
-    pub feature_list: Vec<Feature>
+    pub inherits: Option<String>,
+    pub name: String,
+    pub feature_list: Vec<Feature>,
 }
 
 #[derive(Debug)]
 pub enum Feature {
-    Attribute(Assignment),
-    Method(Identifier, Box<Vec<Arg>>, Type, Box<Option<Expr>>),
+    Attribute(VarDecl),
+    Method(Identifier, Box<Vec<ArgDecl>>, Type, Box<Option<Expr>>),
 }
 
 pub type Identifier = String;
@@ -21,7 +23,7 @@ pub type Int = u32;
 pub type Str = String;
 
 #[derive(Debug)]
-pub struct Assignment {
+pub struct VarDecl {
     pub oid: Identifier,
     pub tid: Type,
     pub expr: Box<Option<Expr>>,
@@ -29,20 +31,12 @@ pub struct Assignment {
 
 #[derive(Debug)]
 pub struct CaseBranch {
-    id: Identifier,
-    t: Box<Type>,
-    expr: Box<Expr>,
+    pub id: Identifier,
+    pub tid: Type,
+    pub expr: Box<Expr>,
 }
 
-#[derive(Debug)]
-pub enum Term {
-    Boolean(Boolean),
-    Int(Int),
-    Str(Str),
-    Identifier(Identifier),
-}
-
-pub type Arg = (Identifier, Type);
+pub type ArgDecl = (Identifier, Type);
 
 #[derive(Debug)]
 pub enum MathOp {
@@ -55,10 +49,10 @@ pub enum MathOp {
 #[derive(Debug)]
 pub enum Expr {
     Identifier(Identifier),
-    Boolean(Boolean),
+    Bool(Boolean),
     Int(Int),
     Str(Str),
-    Assignment(Assignment),
+    Assignment(Identifier, Box<Expr>),
     Dispatch {
         target: Box<Option<Expr>>,
         targettype: Option<Identifier>,
@@ -72,10 +66,10 @@ pub enum Expr {
     },
     While {
         test: Box<Expr>,
-        then: Box<Expr>,
+        exec: Box<Expr>,
     },
     Block(Box<Vec<Expr>>),
-    Let(Box<Vec<Assignment>>),
+    Let(Box<Vec<VarDecl>>, Box<Expr>),
     Case(Box<Expr>, Box<Vec<CaseBranch>>),
     New(Type),
     Isvoid(Box<Expr>),
@@ -84,4 +78,5 @@ pub enum Expr {
         op: Box<MathOp>,
         rhs: Box<Expr>,
     },
+    Paren(Box<Expr>),
 }

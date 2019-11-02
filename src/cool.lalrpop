@@ -1,0 +1,197 @@
+use crate::ast::*;
+use crate::token::Token;
+use crate::lexer::{Loc, LexicalError};
+
+grammar<'input>;
+
+pub Program = <class*>;
+
+class: Class = {
+    "CLASS" <tid:"TYPE"> "{" <f:feature*> "}" ";" => Class {
+        inherits: None,
+        name: tid,
+        feature_list: f
+    },
+    "CLASS" <tid:"TYPE"> "INHERITS" <s:"TYPE"> "{" <f:feature*> "}" ";" => Class {
+        inherits: Some(s),
+        name: tid,
+        feature_list: f,
+    },
+};
+
+feature: Feature = {
+    // Attributes
+    <oid:"ID"> ":" <tid:"TYPE"> ";" => {
+        Feature::Attribute(VarDecl {
+            oid: oid,
+            tid: tid,
+            expr: Box::new(None),
+        })
+    },
+    <oid:"ID"> ":" <tid:"TYPE"> "ASSIGN" <e:expr> ";" => {
+        Feature::Attribute(VarDecl {
+            oid: oid,
+            tid: tid,
+            expr: Box::new(Some(e)),
+        })
+    },
+    // Methods
+    <oid:"ID"> "(" <a:comma_list<arg_decl>?> ")" ":" <rtype:"TYPE"> "{" "}" ";" => {
+        Feature::Method(oid, Box::new(a.unwrap_or(vec![])), rtype, Box::new(None))
+    },
+    <oid:"ID"> "(" <a:comma_list<arg_decl>?> ")" ":" <rtype:"TYPE"> "{" <e:expr> "}" ";" => {
+        Feature::Method(oid, Box::new(a.unwrap_or(vec![])), rtype, Box::new(Some(e)))
+    },
+};
+
+arg_decl: ArgDecl = {
+    <id:"STR"> <tid:"TYPE"> => (id, tid),
+};
+
+dispatch: Expr = {
+    <e:dispatchable_expr> "@" <tid:"TYPE"> "." <id:"ID"> "(" <args:comma_list<expr>?> ")" => {
+        Expr::Dispatch {
+            target: Box::new(Some(e)),
+            targettype: Some(tid),
+            id: id,
+            exprs: Box::new(args.unwrap_or(vec![])),
+        }
+    },
+    <e:dispatchable_expr> "." <id:"ID"> "(" <args:comma_list<expr>?> ")" => {
+        Expr::Dispatch {
+            target: Box::new(Some(e)),
+            targettype: None,
+            id: id,
+            exprs: Box::new(args.unwrap_or(vec![])),
+        }
+    },
+    <id:"ID"> "(" <args:comma_list<expr>?> ")" => {
+        Expr::Dispatch {
+            target: Box::new(None),
+            targettype: None,
+            id: id,
+            exprs: Box::new(args.unwrap_or(vec![])),
+        }
+    },
+};
+
+dispatchable_expr: Expr = {
+    <e:dispatch> => e,
+    "NEW" <tid:"TYPE"> => Expr::New(tid),
+};
+
+let: Expr = {
+    "LET" "IN" <e:expr> => Expr::Let(Box::new(vec![]), Box::new(e)),
+};
+
+math_op: MathOp = {
+    "+" => MathOp::Add,
+    "-" => MathOp::Subtract,
+    "*" => MathOp::Mul,
+    "/" => MathOp::Div,
+};
+
+expr: Expr = {
+    <e:let> => e,
+    <e:dispatchable_expr> => e,
+    // Assign
+    <oid:"ID"> "ASSIGN" <e:expr> => Expr::Assignment(oid, Box::new(e)),
+    // If
+    "IF" <test:expr> "THEN" <then:expr> "ELSE" <orelse:expr> "FI" => {
+        Expr::Conditional {
+            test: Box::new(test),
+            then: Box::new(then),
+            orelse: Box::new(orelse),
+        }
+    },
+    "WHILE" <test:expr> "LOOP" <exec:expr> "POOL" => {
+        Expr::While {
+            test: Box::new(test),
+            exec: Box::new(exec),
+        }
+    },
+    <id:"ID"> => Expr::Identifier(id),
+    <b:"BOOL"> => Expr::Bool(b),
+    <i:"INT"> => Expr::Int(i.parse().unwrap()),
+    <s:"STR"> => Expr::Str(s),
+    "{" <e:expr_list_semicolon+> "}" => Expr::Block(Box::new(e)),
+    "CASE" <e:expr> "OF" <branches:case_branch+> "ESAC" => {
+        Expr::Case(Box::new(e), Box::new(branches))
+    },
+    "ISVOID" <e:expr> => Expr::Isvoid(Box::new(e)),
+};
+
+case_branch: CaseBranch = {
+    <id:"ID"> ":" <tid:"TYPE"> <e:expr> ";" => {
+        CaseBranch {
+            id: id,
+            tid: tid,
+            expr: Box::new(e),
+        }
+    }
+};
+
+expr_list_semicolon: Expr = {
+    <e:expr> ";" => e,
+};
+
+#[inline]
+comma_list<T>: Vec<T> = {
+    <i1: T> <i2:("," T)*> => {
+        let mut items = vec![i1];
+        items.extend(i2.into_iter().map(|e| e.1));
+        items
+    }
+};
+
+extern {
+    type Location = Loc;
+    type Error = LexicalError;
+
+    // Map parser terms to token values:
+    enum Token {
+        "CLASS" => Token::Class_,
+        "ELSE" => Token::Else,
+        "FI" => Token::Fi,
+        "IF" => Token::If,
+        "IN" => Token::In,
+        "INHERITS" => Token::Inherits,
+        "LET" => Token::Let,
+        "LOOP" => Token::Loop,
+        "POOL" => Token::Pool,
+        "THEN" => Token::Then,
+        "WHILE" => Token::While,
+        "CASE" => Token::Case,
+        "ESAC" => Token::Esac,
+        "OF" => Token::Of,
+        "NEW" => Token::New,
+        "ISVOID" => Token::Isvoid,
+        "NOT" => Token::Not,
+        "STR" => Token::StrConst(<String>),
+        "INT" => Token::IntConst(<String>),
+        "BOOL" => Token::BoolConst(<bool>),
+        "TYPE" => Token::Typeid(<String>),
+        "ID" => Token::Objectid(<String>),
+        "DARROW" => Token::Darrow,
+        "ASSIGN" => Token::Assign,
+        "<=" => Token::Le,
+        "{" => Token::Lbrace,
+        "}" => Token::Rbrace,
+        "(" => Token::Lparen,
+        ")" => Token::Rparen,
+        ":" => Token::Colon,
+        ";" => Token::Semicolon,
+        "@" => Token::At,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "/" => Token::Divide,
+        "*" => Token::Mul,
+        "~" => Token::Neg,
+        "=" => Token::Equal,
+        "<" => Token::Lt,
+        "." => Token::Period,
+        "," => Token::Comma,
+        "ERROR" => Token::Error(<String>),
+    }
+}
+

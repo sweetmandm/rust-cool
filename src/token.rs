@@ -43,5 +43,6 @@ pub enum Token {
     Equal,
     Lt,
     Period,
+    Comma,
     Error(String),
 }
